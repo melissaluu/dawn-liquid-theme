@@ -741,6 +741,9 @@
         "quantity_selector": {
           "name": "Quantity selector"
         },
+        "custom_engraving": {
+          "name": "Engraving text"
+        },
         "variant_picker": {
           "name": "Variant picker",
           "settings": {

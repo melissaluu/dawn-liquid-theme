@@ -263,24 +263,11 @@
         pauseSlideshow: `{{ 'sections.slideshow.pause_slideshow' | t }}`,
         playSlideshow: `{{ 'sections.slideshow.play_slideshow' | t }}`,
       }
-
-      window.storefrontAPIClient = (operation, variables) => {
-        const headers = {
-          'Content-Type': 'application/json',
-          Accept: 'application/json',
-          'X-Shopify-Storefront-Access-Token': 'f8d666e5c7ea78ece514ec7c8a560be4',
-          'X-SDK-Variant': 'storefront-api-js-client',
-          'X-SDK-Version': '2022-07',
-          'X-SDK-Variant-Source': 'online-store'
-        };
-
-          console.log('inside!!!', operation, variables)
-        }
-
     </script>
 
     {%- if settings.predictive_search_enabled -%}
       <script src="{{ 'predictive-search.js' | asset_url }}" defer="defer"></script>
     {%- endif -%}
+    <script src="{{ 'sfapi-client.js' | asset_url }}" defer="defer"></script>
   </body>
 </html>

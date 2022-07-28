@@ -409,6 +409,19 @@
                 </div>
               </div>
             </noscript>
+          {%- when 'custom_engraving' -%}
+            <div class="product-form__input {% if product.has_only_default_variant %} hidden{% endif %}" {{ block.shopify_attributes }}>
+              <label class="form__label" for="Engraving-{{ section.id }}">
+                Engraving text
+              </label>
+              <input type="text"
+                class="field__input"
+                name="properties[engraving]"
+                id="Engraving-{{ section.id }}"
+                form="{{ product_form_id }}"
+                style="border: 1px solid gray;"
+              >
+            </div>
           {%- when 'buy_buttons' -%}
             <div {{ block.shopify_attributes }}>
               <product-form class="product-form">
@@ -691,6 +704,11 @@
     {
       "type": "quantity_selector",
       "name": "t:sections.main-product.blocks.quantity_selector.name",
+      "limit": 1
+    },
+    {
+      "type": "custom_engraving",
+      "name": "t:sections.main-product.blocks.custom_engraving.name",
       "limit": 1
     },
     {
