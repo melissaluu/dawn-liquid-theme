@@ -58,8 +58,6 @@ class CartNotification extends HTMLElement {
   }
 
   getSectionInnerHTML(html, selector = '.shopify-section') {
-    console.log('section html: ', html);
-    console.log('selector:', selector)
     return new DOMParser()
       .parseFromString(html, 'text/html')
       .querySelector(selector).innerHTML;

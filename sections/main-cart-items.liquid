@@ -213,6 +213,7 @@
                           aria-label="{{ 'products.product.quantity.input_label' | t: product: item.product.title | escape }}"
                           id="Quantity-{{ item.index | plus: 1 }}"
                           data-index="{{ item.index | plus: 1 }}"
+                          data-lineId="{{ item.key }}"
                         >
                         <button class="quantity__button no-js-hidden" name="plus" type="button">
                           <span class="visually-hidden">{{ 'products.product.quantity.increase' | t: product: item.product.title | escape }}</span>
@@ -220,7 +221,7 @@
                         </button>
                       </quantity-input>
 
-                      <cart-remove-button id="Remove-{{ item.index | plus: 1 }}" data-index="{{ item.index | plus: 1 }}">
+                      <cart-remove-button id="Remove-{{ item.index | plus: 1 }}" data-index="{{ item.index | plus: 1 }}" data-lineId="{{ item.key }}">
                         <a href="{{ item.url_to_remove }}" class="button button--tertiary" aria-label="{{ 'sections.cart.remove_title' | t: title: item.title }}">
                           {% render 'icon-remove' %}
                         </a>

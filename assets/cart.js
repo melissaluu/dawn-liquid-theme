@@ -4,7 +4,7 @@ class CartRemoveButton extends HTMLElement {
     this.addEventListener('click', (event) => {
       event.preventDefault();
       const cartItems = this.closest('cart-items') || this.closest('cart-drawer-items');
-      cartItems.updateQuantity(this.dataset.index, 0);
+      cartItems.updateQuantity(this.dataset, 0);
     });
   }
 }
@@ -14,7 +14,7 @@ customElements.define('cart-remove-button', CartRemoveButton);
 class CartItems extends HTMLElement {
   constructor() {
     super();
-
+    
     this.lineItemStatusElement = document.getElementById('shopping-cart-line-item-status') || document.getElementById('CartDrawer-LineItemStatus');
 
     this.currentItemCount = Array.from(this.querySelectorAll('[name="updates[]"]'))
@@ -28,16 +28,11 @@ class CartItems extends HTMLElement {
   }
 
   onChange(event) {
-    this.updateQuantity(event.target.dataset.index, event.target.value, document.activeElement.getAttribute('name'));
+    this.updateQuantity(event.target.dataset, event.target.value, document.activeElement.getAttribute('name'));
   }
 
   getSectionsToRender() {
     return [
-      {
-        id: 'main-cart-items',
-        section: document.getElementById('main-cart-items').dataset.id,
-        selector: '.js-contents',
-      },
       {
         id: 'cart-icon-bubble',
         section: 'cart-icon-bubble',
@@ -52,26 +47,113 @@ class CartItems extends HTMLElement {
         id: 'main-cart-footer',
         section: document.getElementById('main-cart-footer').dataset.id,
         selector: '.js-contents',
-      }
+      },
+      {
+        id: 'main-cart-items',
+        section: document.getElementById('main-cart-items').dataset.id,
+        selector: '.js-contents',
+      },
     ];
   }
 
-  updateQuantity(line, quantity, name) {
+  updateQuantity({index: line, lineId}, quantity, name) {
     this.enableLoading(line);
+
+    const sections = this.getSectionsToRender().map((section) => section.section);
+    const sectionsUrl = window.location.pathname;
+
+    if (window.UseStorefrontAPI()) {
+
+      let startTime = 0;
+      const sfapiCartId = window.StorefrontAPIClient.getCartId();
+
+      window.StorefrontAPIClient.fetchData(window.StorefrontAPIClient.operations.CART_QUERY, {id: sfapiCartId})
+        .then(response => { return response.json()})
+        .then(response => {
+          const {id, quantity} = response.data.cart.lines.edges[0].node;
+          this.lineId = id;
+          
+          startTime = Date.now();
+
+          const variables = {
+            id: sfapiCartId,
+            lines: [{
+              id,
+              quantity: quantity > 5 ? quantity - 1 : quantity + 1,
+            }],
+          };
+
+          return window.StorefrontAPIClient.fetchData(window.StorefrontAPIClient.operations.UPDATE_LINES, variables)
+        })
+        .then(response => { return response.json()})
+        .then((response) => {
+          this.cart = response.data.cartLinesUpdate.cart;
+
+          // NOTE: order of sections seems to affect whether section rendering api returns values (had to reorder for this to work)
+          return fetch(`${sectionsUrl}?sections=${sections.join()}`)
+        })
+        .then((response) => {
+          return response.json();
+        })
+        .then(response => {
+          const {totalQuantity} = this.cart;
+          const isEmptyCart = totalQuantity === 0;
+
+          this.classList.toggle('is-empty', isEmptyCart);
+          const cartDrawerWrapper = document.querySelector('cart-drawer');
+          const cartFooter = document.getElementById('main-cart-footer');
+
+          if (cartFooter) cartFooter.classList.toggle('is-empty', isEmptyCart);
+          if (cartDrawerWrapper) cartDrawerWrapper.classList.toggle('is-empty', isEmptyCart);
+
+          this.getSectionsToRender().forEach((section => {
+            const elementToReplace =
+              document.getElementById(section.id).querySelector(section.selector) || document.getElementById(section.id);
+            elementToReplace.innerHTML =
+              this.getSectionInnerHTML(response[section.section], section.selector);
+          }));
+  
+          this.updateLiveRegions(line, totalQuantity);
+          const lineItem =  document.getElementById(`CartItem-${line}`) || document.getElementById(`CartDrawer-Item-${line}`);
+          if (lineItem && lineItem.querySelector(`[name="${name}"]`)) {
+            cartDrawerWrapper ? trapFocus(cartDrawerWrapper, lineItem.querySelector(`[name="${name}"]`)) : lineItem.querySelector(`[name="${name}"]`).focus();
+          } else if (isEmptyCart && cartDrawerWrapper) {
+            trapFocus(cartDrawerWrapper.querySelector('.drawer__inner-empty'), cartDrawerWrapper.querySelector('a'))
+          } else if (document.querySelector('.cart-item') && cartDrawerWrapper) {
+            trapFocus(cartDrawerWrapper, document.querySelector('.cart-item__name'))
+          }
+
+          this.disableLoading();
+        })
+        .catch(() => {
+          this.querySelectorAll('.loading-overlay').forEach((overlay) => overlay.classList.add('hidden'));
+          const errors = document.getElementById('cart-errors') || document.getElementById('CartDrawer-CartErrors');
+          errors.textContent = window.cartStrings.error;
+          this.disableLoading();
+        })
+        .finally(() => {
+          console.log(`SFAPI cart update time: ${Math.floor(Date.now() - startTime)}ms`);
+        });
+
+      return;
+    }
+
+
 
     const body = JSON.stringify({
       line,
       quantity,
-      sections: this.getSectionsToRender().map((section) => section.section),
-      sections_url: window.location.pathname
+      sections,
+      sections_url: sectionsUrl 
     });
 
+    const startTime = Date.now();
     fetch(`${routes.cart_change_url}`, {...fetchConfig(), ...{ body }})
       .then((response) => {
-        return response.text();
+        return response.json();
       })
       .then((state) => {
-        const parsedState = JSON.parse(state);
+        const parsedState = state // JSON.parse(state);
         this.classList.toggle('is-empty', parsedState.item_count === 0);
         const cartDrawerWrapper = document.querySelector('cart-drawer');
         const cartFooter = document.getElementById('main-cart-footer');
@@ -101,6 +183,9 @@ class CartItems extends HTMLElement {
         const errors = document.getElementById('cart-errors') || document.getElementById('CartDrawer-CartErrors');
         errors.textContent = window.cartStrings.error;
         this.disableLoading();
+      })
+      .finally(() => {
+        console.log(`Ajax cart update time: ${Math.floor(Date.now() - startTime)}ms`);
       });
   }
 

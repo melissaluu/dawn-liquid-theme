@@ -1,6 +1,6 @@
 const DEFAULT_SFAPI_VERSION = '2022-07';
 const CART_COOKIE_NAME = 'c1-cart-id'; //'cart';
-const LINE_NUM = '1'; // '250';
+const LINE_NUM = '250';
 
 const MONEY_FRAGMENT = `
   fragment MoneyFragment on MoneyV2 {
@@ -291,6 +291,56 @@ const ADD_LINES = `
   ${CART_LINES_FRAGMENT}
 `
 
+const UPDATE_LINES = `
+  mutation CartAddLines(
+    $id: ID!
+    $lines: [CartLineUpdateInput!]!
+    $after: String
+  ) {
+    cartLinesUpdate(cartId: $id, lines: $lines) {
+      userErrors {
+        ...CartUserErrorsFragment
+      }
+      cart {
+        id
+        totalQuantity
+        lines(
+          first: ${LINE_NUM}
+          after: $after
+        ) {
+          pageInfo {
+            ...PageInfoFragment
+          }
+          edges {
+            cursor
+            node {
+              id
+              quantity
+              attributes {
+                key
+                value
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  ${CART_USER_ERRORS_FRAGMENT}
+  ${PAGE_INFO_FRAGMENT}
+`
+
+// const NODE_QUERY = `
+//   query getNode($id: ID!) {
+//     node(id: $id) {
+//       ... on CartLine {
+//         ${CART_LINES_FRAGMENT}
+//       }
+//     }
+//   }
+// `
+
 function generateSFAPIFetchData(storefrontAPIVersion) {
   const headers = {
     'Content-Type': 'application/json',
@@ -301,7 +351,9 @@ function generateSFAPIFetchData(storefrontAPIVersion) {
     'X-SDK-Variant-Source': 'online-store'
   };
 
-  const url = `${window.shopUrl}/api/${storefrontAPIVersion}/graphql`
+  // NOTE: need to figure out custom urls & cross site policies
+  // const url = `${window.shopUrl}/api/${storefrontAPIVersion}/graphql`
+  const url = `/api/${storefrontAPIVersion}/graphql`
 
   return (operation, variables = {}) => {
     const body = JSON.stringify({
@@ -349,7 +401,6 @@ function initStorefrontAPIClient(storefrontAPIVersion = DEFAULT_SFAPI_VERSION) {
   }
 
   const getAllCartLineItems = (cart) => {    
-    console.log('cart all lines', cart)
     if (cart.lines.pageInfo.hasNextPage) {
       return getNextCartLines(cart, [...cart.lines.edges])
       .then((response) => {
@@ -357,7 +408,7 @@ function initStorefrontAPIClient(storefrontAPIVersion = DEFAULT_SFAPI_VERSION) {
       })
     }
 
-    return extractNodes(cart.lines.edges)
+    return extractNodes(cart.lines.edges);
   }
 
   window.StorefrontAPIClient = {
@@ -371,7 +422,9 @@ function initStorefrontAPIClient(storefrontAPIVersion = DEFAULT_SFAPI_VERSION) {
     operations: {
       CART_QUERY,
       CART_CREATE_MUTATION,
-      ADD_LINES
+      ADD_LINES,
+      UPDATE_LINES,
+     // NODE_QUERY
     }
   }
 }

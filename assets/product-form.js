@@ -27,11 +27,11 @@ if (!customElements.get('product-form')) {
       
 
      if (window.UseStorefrontAPI()) {
+      // NOTE: Must maintain the cart id
       const sfapiCartId = window.StorefrontAPIClient.getCartId();
 
-
       const formDataObject = [...formData.entries()].reduce((acc, item) => {
-        // Need to transform the Liquid syntax for item attributes (i.e. properties) to SFAPI format
+        // NOTE: Need to transform the Liquid syntax for item attributes (i.e. properties) to SFAPI format
         if(item[0].includes('properties[')) {
           const propName = item[0].match(/\[(.*)\]/)[1];
           if (typeof item[1] === 'string' && item[1].length > 0) {
@@ -45,9 +45,6 @@ if (!customElements.get('product-form')) {
         }
         return acc;
       }, {attributes: []});
-
-      console.log('cart id', sfapiCartId)
-      console.log('form object', formDataObject)
 
       const merchandiseId = `gid://shopify/ProductVariant/${formDataObject.id}`;
 
@@ -63,10 +60,11 @@ if (!customElements.get('product-form')) {
         window.StorefrontAPIClient.operations.ADD_LINES :
         window.StorefrontAPIClient.operations.CART_CREATE_MUTATION;
 
+      // NOTE: SFAPI has unique operation names to consider when parsing JSON response
       const variables = cartId ? {id: cartId, lines} : {input: {lines}};
       const operationName = cartId ? 'cartLinesAdd' : 'cartCreate';
 
-
+      const startTime = Date.now();
       window.StorefrontAPIClient.fetchData(operation, variables)
       .then(response => { return response.json()})
       .then(response => {
@@ -76,7 +74,6 @@ if (!customElements.get('product-form')) {
         
         const {data: {[operationName]: {cart, userErrors}}} = response;
         if (userErrors.length > 0) {
-          console.log(userErrors)
           this.handleErrorMessage(JSON.stringify(userErrors));
 
           const soldOutMessage = this.submitButton.querySelector('.sold-out-message');
@@ -89,17 +86,15 @@ if (!customElements.get('product-form')) {
         }         
         this.error = false;
         
-        document.cookie=`${window.StorefrontAPIClient.CART_COOKIE_NAME}=${cart.id}`
-        console.log('cart response', cart, userErrors);
+        document.cookie=`${window.StorefrontAPIClient.CART_COOKIE_NAME}=${cart.id};path=/`
         return cart;
       })
       .then((response) => {
-        // Need to get all cart lines to find the right cartline id to display
+        // NOTE: Need to get all cart lines to find the right cartline id to display
         return window.StorefrontAPIClient.getAllCartLineItems(response)
       })
       .then((response) => {
-        console.log('final cartLines', response)
-        // THIS DOES NOT ACCOUNT FOR SALES PLANS
+        // NOTE: THIS DOES NOT ACCOUNT FOR SALES PLANS
         this.cartLineId = response.find((item) => {
           return item.merchandise.id === merchandiseId 
             && JSON.stringify(formDataObject.attributes) == JSON.stringify(item.attributes) // cheating - I know
@@ -112,18 +107,17 @@ if (!customElements.get('product-form')) {
         return response.json();
       })
       .then((response) => {
-        // const parsedState = {key: this.cartLineId, sections: response};
-        //   const quickAddModal = this.closest('quick-add-modal');
-        // if (quickAddModal) {
-        //   console.log('in modal')
-        //   document.body.addEventListener('modalClosed', () => {
-        //     setTimeout(() => { this.cart.renderContents(parsedState) });
-        //   }, { once: true });
-        //   quickAddModal.hide(true);
-        // } else {
-        //   console.log('in cart', parsedState)
-        //   this.cart.renderContents(parsedState);
-        // }
+        const parsedState = {key: this.cartLineId, sections: response};
+        const quickAddModal = this.closest('quick-add-modal');
+
+        if (quickAddModal) {
+          document.body.addEventListener('modalClosed', () => {
+            setTimeout(() => { this.cart.renderContents(parsedState) });
+          }, { once: true });
+          quickAddModal.hide(true);
+        } else {
+          this.cart.renderContents(parsedState);
+        }
       })
       .catch((error) => {
         console.error('Error:', error);
@@ -133,123 +127,12 @@ if (!customElements.get('product-form')) {
         if (this.cart && this.cart.classList.contains('is-empty')) this.cart.classList.remove('is-empty');
         if (!this.error) this.submitButton.removeAttribute('aria-disabled');
         this.querySelector('.loading-overlay__spinner').classList.add('hidden');
-      });
-      
-      // console.log('form data', formDataObject, cartInput)
-
-      // const query = window.StorefrontAPIClient.operations.CART_QUERY;
-
-      // window.StorefrontAPIClient.fetchData(query, {id: 'gid://shopify/Cart/3167a499d2ca24f5743149958f439dff'})
-      //   .then(response => { return response.json()})
-      //   .then(response => {
-      //     console.log('sfapi response', response);
-      //   })
-      //   .then(() => {
-
-      //   })
-      //   .catch((error) => {
-      //     console.error('Error:', error);
-      //   });
-      
-      
+        console.log(`SFAPI add to cart time: ${Math.floor(Date.now() - startTime)}ms`);
+      }); 
 
        return;
      }
 
-      
-    //  let formData1 = {
-    //   'items': [{
-    //    'id': 13650895011896,
-    //    'quantity': 2,
-    //    'properties': {
-    //     'engraving': 'test'
-    //    }
-    //    }],
-    //    'sections': ['cart-notification-product','cart-notification-button','cart-icon-bubble']
-    //  };
-
-      //  fetch(window.Shopify.routes.root + 'cart/add.js', {
-      //    method: 'POST',
-      //    headers: {
-      //      'Content-Type': 'application/json'
-      //    },
-      //    body: JSON.stringify(formData1)
-      //  })
-      //  .then(response => {
-      //    return response.json();
-      //  })
-      //  .then((response) => {
-      //   console.log('cart/add.js', response)
-      //  })
-      //  .catch((error) => {
-      //    console.error('Error:', error);
-      //  });
-
-      //  fetch(window.Shopify.routes.root + 'cart/update.js', {
-      //   method: 'POST',
-      //   headers: {
-      //     'Content-Type': 'application/json'
-      //   },
-      //   body: JSON.stringify({
-      //     attributes: {
-      //       'attr1': 'cart attribute 1',
-      //       '__private_attr': 'cart private attribute'
-      //     },
-      //     'sections': ['cart-notification-product','cart-notification-button','cart-icon-bubble']
-      //   })
-      // })
-      // .then(response => {
-      //   return response.json();
-      // })
-      // .then((response) => {
-      //  console.log('update.js', response)
-      // })
-
-      //  fetch(window.Shopify.routes.root + 'cart/change.js', {
-      //   method: 'POST',
-      //   headers: {
-      //     'Content-Type': 'application/json'
-      //   },
-      //   body: JSON.stringify({
-      //     'line': 1,
-      //     'quantity': 3,
-      //     'sections': ['cart-notification-product','cart-notification-button','cart-icon-bubble']
-      //   })
-      // })
-      // .then(response => {
-      //   return response.json();
-      // })
-      // .then((response) => {
-      //  console.log('change.js', response)
-      // })
-      
-      // fetch(window.Shopify.routes.root + 'cart/clear.js', {
-      //   method: 'POST',
-      //   headers: {
-      //     'Content-Type': 'application/json'
-      //   }
-      // })
-      // .then(response => {
-      //   return response.json();
-      // })
-      // .then((response) => {
-      //  console.log('clear.js', response)
-      // });
-      
-      // fetch(window.Shopify.routes.root + 'cart.js', {
-      //     method: 'GET',
-      //     headers: {
-      //       'Content-Type': 'application/json'
-      //     }
-      // }).then(response => {
-      //   return response.json();
-      // })
-      // .then((response) => {
-      //  console.log('cart.js', response)
-      // })
-      // .catch((error) => {
-      //   console.error('Error:', error);
-      // });
 
       if (this.cart) {
         formData.append('sections', sections);
@@ -262,10 +145,10 @@ if (!customElements.get('product-form')) {
       delete config.headers['Content-Type'];
       config.body = formData;
 
+      const startTime = Date.now();
       fetch(`${routes.cart_add_url}`, config)
         .then((response) => response.json())
         .then((response) => {
-          console.log("response", response)
           if (response.status) {
             this.handleErrorMessage(response.description);
 
@@ -300,6 +183,7 @@ if (!customElements.get('product-form')) {
           if (this.cart && this.cart.classList.contains('is-empty')) this.cart.classList.remove('is-empty');
           if (!this.error) this.submitButton.removeAttribute('aria-disabled');
           this.querySelector('.loading-overlay__spinner').classList.add('hidden');
+          console.log(`Ajax add to cart time: ${Math.floor(Date.now() - startTime)}ms`);
         });
     }
 
