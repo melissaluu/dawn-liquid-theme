@@ -331,16 +331,6 @@ const UPDATE_LINES = `
   ${PAGE_INFO_FRAGMENT}
 `
 
-// const NODE_QUERY = `
-//   query getNode($id: ID!) {
-//     node(id: $id) {
-//       ... on CartLine {
-//         ${CART_LINES_FRAGMENT}
-//       }
-//     }
-//   }
-// `
-
 function generateSFAPIFetchData(storefrontAPIVersion) {
   const headers = {
     'Content-Type': 'application/json',
@@ -423,8 +413,7 @@ function initStorefrontAPIClient(storefrontAPIVersion = DEFAULT_SFAPI_VERSION) {
       CART_QUERY,
       CART_CREATE_MUTATION,
       ADD_LINES,
-      UPDATE_LINES,
-     // NODE_QUERY
+      UPDATE_LINES
     }
   }
 }

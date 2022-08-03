@@ -72,8 +72,6 @@ class CartItems extends HTMLElement {
         .then(response => {
           const {id, quantity} = response.data.cart.lines.edges[0].node;
           this.lineId = id;
-          
-          startTime = Date.now();
 
           const variables = {
             id: sfapiCartId,
@@ -83,6 +81,7 @@ class CartItems extends HTMLElement {
             }],
           };
 
+          startTime = Date.now();
           return window.StorefrontAPIClient.fetchData(window.StorefrontAPIClient.operations.UPDATE_LINES, variables)
         })
         .then(response => { return response.json()})
