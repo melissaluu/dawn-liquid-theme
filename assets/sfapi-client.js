@@ -331,6 +331,17 @@ const UPDATE_LINES = `
   ${PAGE_INFO_FRAGMENT}
 `
 
+const UDATE_NOTE = `
+  mutation updateCartNote($id: ID!, $note: String) {
+    cartNoteUpdate(cartId: $id, note: $note) {
+      cart {
+        id
+        note
+      }
+    }
+  }
+`;
+
 function generateSFAPIFetchData(storefrontAPIVersion) {
   const headers = {
     'Content-Type': 'application/json',
@@ -413,7 +424,8 @@ function initStorefrontAPIClient(storefrontAPIVersion = DEFAULT_SFAPI_VERSION) {
       CART_QUERY,
       CART_CREATE_MUTATION,
       ADD_LINES,
-      UPDATE_LINES
+      UPDATE_LINES,
+      UDATE_NOTE
     }
   }
 }

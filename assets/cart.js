@@ -89,6 +89,7 @@ class CartItems extends HTMLElement {
           this.cart = response.data.cartLinesUpdate.cart;
 
           // NOTE: order of sections seems to affect whether section rendering api returns values (had to reorder for this to work)
+          // There seems to be an issue with 'main-cart-items' and it will block other sections to be returned 
           return fetch(`${sectionsUrl}?sections=${sections.join()}`)
         })
         .then((response) => {
@@ -245,6 +246,17 @@ if (!customElements.get('cart-note')) {
       super();
 
       this.addEventListener('change', debounce((event) => {
+        
+        if (window.UseStorefrontAPI()) {
+          const sfapiCartId = window.StorefrontAPIClient.getCartId();
+          window.StorefrontAPIClient.fetchData(window.StorefrontAPIClient.operations.UDATE_NOTE, {id: sfapiCartId, note: event.target.value})
+          .catch((error) => {
+            console.log('Update note error: ', error);
+          });
+
+          return;
+        }
+
         const body = JSON.stringify({ note: event.target.value });
         fetch(`${routes.cart_update_url}`, {...fetchConfig(), ...{ body }});
       }, 300))
