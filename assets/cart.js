@@ -185,7 +185,7 @@ class CartItems extends HTMLElement {
         this.disableLoading();
       })
       .finally(() => {
-        console.log(`Ajax cart update time: ${Math.floor(Date.now() - startTime)}ms`);
+        console.log(`Ajax line update time: ${Math.floor(Date.now() - startTime)}ms`);
       });
   }
 
@@ -246,19 +246,27 @@ if (!customElements.get('cart-note')) {
       super();
 
       this.addEventListener('change', debounce((event) => {
+
+        const startTime = Date.now();
         
         if (window.UseStorefrontAPI()) {
           const sfapiCartId = window.StorefrontAPIClient.getCartId();
           window.StorefrontAPIClient.fetchData(window.StorefrontAPIClient.operations.UDATE_NOTE, {id: sfapiCartId, note: event.target.value})
           .catch((error) => {
             console.log('Update note error: ', error);
+          })
+          .finally(() => {
+            console.log(`Ajax note update time: ${Math.floor(Date.now() - startTime)}ms`);
           });
 
           return;
         }
 
         const body = JSON.stringify({ note: event.target.value });
-        fetch(`${routes.cart_update_url}`, {...fetchConfig(), ...{ body }});
+        fetch(`${routes.cart_update_url}`, {...fetchConfig(), ...{ body }})
+        .finally(() => {
+          console.log(`Ajax note update time: ${Math.floor(Date.now() - startTime)}ms`);
+        });
       }, 300))
     }
   });
