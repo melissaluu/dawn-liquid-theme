@@ -97,6 +97,12 @@
     "predictive_search_show_price": false,
     "currency_code_enabled": true,
     "show_cart_note": true,
+    "recurpay_label": "Subscribe Now and Save",
+    "recurpay_button": "Subscribe Now",
+    "recurpay_brand_color": "#000000",
+    "recurpay_border_color": "#000000",
+    "recurpay_button_color": "#ffffff",
+    "recurpay_button_bg": "#000000",
     "sections": {
       "announcement-bar": {
         "type": "announcement-bar",
@@ -236,13 +242,7 @@
         "settings": {
         }
       }
-    },
-    "recurpay_label": "Subscribe Now and Save",
-    "recurpay_button": "Subscribe Now",
-    "recurpay_brand_color": "#000000",
-    "recurpay_border_color": "#000000",
-    "recurpay_button_color": "#ffffff",
-    "recurpay_button_bg": "#000000"
+    }
   },
   "presets": {
     "Default": {
