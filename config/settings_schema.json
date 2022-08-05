@@ -1194,5 +1194,82 @@
         "info": "t:settings_schema.cart.settings.cart_drawer.collection.info"
       }
     ]
+  },
+  {
+    "name": "Recurpay Subscription",
+    "settings": [
+      {
+        "type": "header",
+        "content": "Subscription Domain"
+      },
+      {
+        "type": "header",
+        "content": "General Settings"
+      },
+      {
+        "type": "text",
+        "id": "recurpay_label",
+        "label": "Label Text",
+        "default": "Subscribe Now and Save"
+      },
+      {
+        "type": "text",
+        "id": "recurpay_button",
+        "label": "Button Text",
+        "default": "Subscribe Now"
+      },
+      {
+        "type": "color",
+        "id": "recurpay_brand_color",
+        "label": "Brand Color",
+        "default": "#000000"
+      },
+      {
+        "type": "color",
+        "id": "recurpay_border_color",
+        "label": "Border Color",
+        "default": "#000000"
+      },
+      {
+        "type": "color",
+        "id": "recurpay_button_color",
+        "label": "Button Color",
+        "default": "#ffffff"
+      },
+      {
+        "type": "color",
+        "id": "recurpay_button_bg",
+        "label": "Button Background",
+        "default": "#000000"
+      },
+      {
+        "type": "select",
+        "id": "recurpay_redirect",
+        "label": "Redirect To",
+        "options": [
+          {
+            "value": "default",
+            "label": "Default"
+          },
+          {
+            "value": "cart",
+            "label": "Cart"
+          },
+          {
+            "value": "checkout",
+            "label": "Checkout"
+          }
+        ],
+        "default": "default"
+      },
+      {
+        "type": "header",
+        "content": "Start Subscription"
+      },
+      {
+        "type": "paragraph",
+        "content": "This link is applicable for start subscription button on account page when the customer doesn\\'t have any subscription."
+      }
+    ]
   }
 ]
