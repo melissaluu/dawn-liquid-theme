@@ -236,7 +236,13 @@
         "settings": {
         }
       }
-    }
+    },
+    "recurpay_label": "Subscribe Now and Save",
+    "recurpay_button": "Subscribe Now",
+    "recurpay_brand_color": "#000000",
+    "recurpay_border_color": "#000000",
+    "recurpay_button_color": "#ffffff",
+    "recurpay_button_bg": "#000000"
   },
   "presets": {
     "Default": {
