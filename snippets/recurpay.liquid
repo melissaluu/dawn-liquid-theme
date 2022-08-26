@@ -364,6 +364,8 @@
             planVariant = parseInt(variantSelector.val()),
             planQuantity = 1,
             planParams = {};
+
+        // NOTE: This is broken for Dawn since the quantitySelector doesn't work
         if(quantitySelector.length) {
           planQuantity = parseInt(quantitySelector.val());
         }
@@ -399,10 +401,58 @@
           });
         }
         else{
+          // NOTE: This uses theme add to cart workflow by adding extra "selling_plan" field to existing add to cart form
           if (recurpay.action == "default" && $(atcFormSelector).find(atcSelector).length){
             $(atcFormSelector).find(atcSelector).first().click();
           }
           else{
+            if (window.UseStorefrontAPI()) {
+              const attributes = Object.keys(planParams.properties).map((key) => {
+                return {
+                  key,
+                  value:  planParams.properties[key]
+                };
+              });
+
+              const lines = [{
+                merchandiseId: `gid://shopify/ProductVariant/${planParams.id}`,
+                quantity: planParams.quantity,
+                attributes,
+                sellingPlanId: `gid://shopify/SellingPlan/${planParams.selling_plan}`
+              }];
+
+              const {operation, variables} = window.StorefrontAPIClient.getAddToCartConfig(lines);
+
+              window.StorefrontAPIClient.fetchData(operation, variables)
+                .then(response => { return response.json()})
+                .then(response => {
+                  if (response.errors) {
+                    throw new Error(response.error)
+                  };
+
+                  if (recurpay.checkout == "recurpay" && recurpay.action == "checkout"){
+                    $.getJSON('/cart', function(response) {
+                      // NOTE: Data contract needs to be updated for apps
+                      recurCart(response);
+                    });
+                  }
+                  else if(recurpay.action == "cart"){
+                    document.location.href = '/cart';
+                  }
+                  else{
+                    document.location.href = '/checkout';
+                  }
+                })
+                .catch((error) => {
+                  console.error('recurpay error: ', error)
+                  $('[data-recurpay-error]')
+                  .html(error.message)
+                  .show().delay(3000).fadeOut(); 
+                });
+
+              return;
+            }
+            
             $.ajax({
               type: 'POST',
               url: '/cart/add.js',
@@ -415,10 +465,10 @@
                   });
                 }
                 else if(recurpay.action == "cart"){
-                  document.location.href = '/cart';
+                  // document.location.href = '/cart';
                 }
                 else{
-                  document.location.href = '/checkout';
+                  // document.location.href = '/checkout';
                 }
               },
               error: function(xhr, status, error) {

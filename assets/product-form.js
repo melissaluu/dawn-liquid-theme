@@ -27,8 +27,6 @@ if (!customElements.get('product-form')) {
       
 
      if (window.UseStorefrontAPI()) {
-      // NOTE: Must maintain the cart id
-      const sfapiCartId = window.StorefrontAPIClient.getCartId();
 
       const formDataObject = [...formData.entries()].reduce((acc, item) => {
         // NOTE: Need to transform the Liquid syntax for item attributes (i.e. properties) to SFAPI format
@@ -47,28 +45,24 @@ if (!customElements.get('product-form')) {
       }, {attributes: []});
 
       const merchandiseId = `gid://shopify/ProductVariant/${formDataObject.id}`;
+      const sellingPlanId = formDataObject.selling_plan ? `gid://shopify/SellingPlan/${formDataObject.selling_plan}` : null;
 
       const lines = [{
         merchandiseId,
         quantity: parseInt(formDataObject.quantity, 10),
         attributes: formDataObject.attributes,
+        sellingPlanId
       }];
 
-      const cartId = window.StorefrontAPIClient.getCartId();
-
-      const operation = cartId ? 
-        window.StorefrontAPIClient.operations.ADD_LINES :
-        window.StorefrontAPIClient.operations.CART_CREATE_MUTATION;
-
-      // NOTE: SFAPI has unique operation names to consider when parsing JSON response
-      const variables = cartId ? {id: cartId, lines} : {input: {lines}};
-      const operationName = cartId ? 'cartLinesAdd' : 'cartCreate';
+      const {operationName, operation, variables} = window.StorefrontAPIClient.getAddToCartConfig(lines);
 
       const startTime = Date.now();
       window.StorefrontAPIClient.fetchData(operation, variables)
       .then(response => { return response.json()})
       .then(response => {
-        if (response.error) {
+
+        // NOTE: Double layer error handling needed when using GQL
+        if (response.errors) {
           throw new Error(response.error)
         };
         
@@ -87,6 +81,7 @@ if (!customElements.get('product-form')) {
         this.error = false;
         
         document.cookie=`${window.StorefrontAPIClient.CART_COOKIE_NAME}=${cart.id};path=/`
+        console.log('cart', cart);
         return cart;
       })
       .then((response) => {
@@ -94,9 +89,13 @@ if (!customElements.get('product-form')) {
         return window.StorefrontAPIClient.getAllCartLineItems(response)
       })
       .then((response) => {
-        // NOTE: THIS DOES NOT ACCOUNT FOR SALES PLANS
+        // NOTE: Need to find the updated cart line's id - will be used when in cart pop up
         this.cartLineId = response.find((item) => {
+          const hasSameSellingPlanId = sellingPlanId && item.sellingPlanAllocation ? 
+            item.sellingPlanAllocation.sellingPlan.id === sellingPlanId : 
+            true;
           return item.merchandise.id === merchandiseId 
+            && hasSameSellingPlanId
             && JSON.stringify(formDataObject.attributes) == JSON.stringify(item.attributes) // cheating - I know
         }).id;
       })

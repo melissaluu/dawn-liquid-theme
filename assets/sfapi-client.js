@@ -80,34 +80,6 @@ ${IMAGE_FRAGMENT}
 
 ${PAGE_INFO_FRAGMENT}
 
-fragment SellingPlanFragment on SellingPlan {
-  id
-  description
-  name
-  recurringDeliveries
-  options {
-    name
-    value
-  }
-  priceAdjustments {
-    orderCount
-    adjustmentValue {
-      ... on SellingPlanFixedAmountPriceAdjustment {
-        adjustmentAmount {
-          ...MoneyFragment
-        }
-      }
-      ... on SellingPlanFixedPriceAdjustment {
-        price {
-          ...MoneyFragment
-        }
-      }
-      ... on SellingPlanPercentagePriceAdjustment {
-        adjustmentPercentage
-      }
-    }
-  }
-}
 
 fragment SellingPlanAllocationFragment on SellingPlanAllocation {
   priceAdjustments {
@@ -125,7 +97,34 @@ fragment SellingPlanAllocationFragment on SellingPlanAllocation {
     }
   }
   sellingPlan {
-    ...SellingPlanFragment
+    {
+      id
+      description
+      name
+      recurringDeliveries
+      options {
+        name
+        value
+      }
+      priceAdjustments {
+        orderCount
+        adjustmentValue {
+          ... on SellingPlanFixedAmountPriceAdjustment {
+            adjustmentAmount {
+              ...MoneyFragment
+            }
+          }
+          ... on SellingPlanFixedPriceAdjustment {
+            price {
+              ...MoneyFragment
+            }
+          }
+          ... on SellingPlanPercentagePriceAdjustment {
+            adjustmentPercentage
+          }
+        }
+      }
+    }
   }
 }
 
@@ -211,6 +210,11 @@ const CART_LINES_FRAGMENT = `
           attributes {
             key
             value
+          }
+          sellingPlanAllocation {
+            sellingPlan {
+              id
+            }
           }
           merchandise {
             ... on ProductVariant {
@@ -412,11 +416,23 @@ function initStorefrontAPIClient(storefrontAPIVersion = DEFAULT_SFAPI_VERSION) {
     return extractNodes(cart.lines.edges);
   }
 
+  const getCartId = () => {
+    const rawId = getCookie(CART_COOKIE_NAME);
+    return rawId ? rawId : null; //`gid://shopify/Cart/${rawId}` : null;
+  }
+
   window.StorefrontAPIClient = {
     fetchData,
-    getCartId(){
-      const rawId = getCookie(CART_COOKIE_NAME);
-      return rawId ? rawId : null; //`gid://shopify/Cart/${rawId}` : null;
+    getCartId,
+    getAddToCartConfig(lines) {
+      const cartId = getCartId();
+      
+      // NOTE: SFAPI has unique operation names to consider when parsing JSON response
+      return {
+        operation: cartId ? ADD_LINES : CART_CREATE_MUTATION,
+        operationName: cartId ? 'cartLinesAdd' : 'cartCreate',
+        variables: cartId ? {id: cartId, lines} : {input: {lines}},
+      }
     },
     getAllCartLineItems,
     CART_COOKIE_NAME,

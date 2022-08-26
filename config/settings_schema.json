@@ -1260,7 +1260,7 @@
             "label": "Checkout"
           }
         ],
-        "default": "default"
+        "default": "cart"
       },
       {
         "type": "header",
