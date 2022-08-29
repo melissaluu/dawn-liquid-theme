@@ -421,7 +421,7 @@
                 sellingPlanId: `gid://shopify/SellingPlan/${planParams.selling_plan}`
               }];
 
-              const {operation, variables} = window.StorefrontAPIClient.getAddToCartConfig(lines);
+              const {operationName, operation, variables} = window.StorefrontAPIClient.getAddToCartConfig(lines);
 
               window.StorefrontAPIClient.fetchData(operation, variables)
                 .then(response => { return response.json()})
@@ -429,6 +429,14 @@
                   if (response.errors) {
                     throw new Error(response.error)
                   };
+
+                  const {data: {[operationName]: {cart, userErrors}}} = response;
+
+                  if (userErrors.length > 0) {
+                    throw new Error(JSON.stringify(userErrors));
+                  } 
+
+                  window.StorefrontAPIClient.setCartIDCookie(cart);
 
                   if (recurpay.checkout == "recurpay" && recurpay.action == "checkout"){
                     $.getJSON('/cart', function(response) {

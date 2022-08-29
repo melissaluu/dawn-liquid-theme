@@ -80,7 +80,7 @@ if (!customElements.get('product-form')) {
         }         
         this.error = false;
         
-        document.cookie=`${window.StorefrontAPIClient.CART_COOKIE_NAME}=${cart.id};path=/`
+        window.StorefrontAPIClient.setCartIDCookie(cart);
         console.log('cart', cart);
         return cart;
       })

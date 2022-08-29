@@ -435,6 +435,9 @@ function initStorefrontAPIClient(storefrontAPIVersion = DEFAULT_SFAPI_VERSION) {
       }
     },
     getAllCartLineItems,
+    setCartIDCookie(cart) {
+      document.cookie=`${window.StorefrontAPIClient.CART_COOKIE_NAME}=${cart.id};path=/`
+    },
     CART_COOKIE_NAME,
     operations: {
       CART_QUERY,
