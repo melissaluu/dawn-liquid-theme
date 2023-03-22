@@ -1,5 +1,5 @@
 const DEFAULT_SFAPI_VERSION = '2022-07';
-const CART_COOKIE_NAME = 'c1-cart-id'; //'cart';
+const CART_COOKIE_NAME = 'cart';
 const LINE_NUM = '250';
 
 const MONEY_FRAGMENT = `
@@ -80,7 +80,6 @@ ${IMAGE_FRAGMENT}
 
 ${PAGE_INFO_FRAGMENT}
 
-
 fragment SellingPlanAllocationFragment on SellingPlanAllocation {
   priceAdjustments {
     price {
@@ -97,31 +96,29 @@ fragment SellingPlanAllocationFragment on SellingPlanAllocation {
     }
   }
   sellingPlan {
-    {
-      id
-      description
+    id
+    description
+    name
+    recurringDeliveries
+    options {
       name
-      recurringDeliveries
-      options {
-        name
-        value
-      }
-      priceAdjustments {
-        orderCount
-        adjustmentValue {
-          ... on SellingPlanFixedAmountPriceAdjustment {
-            adjustmentAmount {
-              ...MoneyFragment
-            }
+      value
+    }
+    priceAdjustments {
+      orderCount
+      adjustmentValue {
+        ... on SellingPlanFixedAmountPriceAdjustment {
+          adjustmentAmount {
+            ...MoneyFragment
           }
-          ... on SellingPlanFixedPriceAdjustment {
-            price {
-              ...MoneyFragment
-            }
+        }
+        ... on SellingPlanFixedPriceAdjustment {
+          price {
+            ...MoneyFragment
           }
-          ... on SellingPlanPercentagePriceAdjustment {
-            adjustmentPercentage
-          }
+        }
+        ... on SellingPlanPercentagePriceAdjustment {
+          adjustmentPercentage
         }
       }
     }
@@ -386,6 +383,8 @@ function extractNodes(edges) {
   })
 }
 
+
+
 function initStorefrontAPIClient(storefrontAPIVersion = DEFAULT_SFAPI_VERSION) {
 
   const fetchData = generateSFAPIFetchData(storefrontAPIVersion);
@@ -418,7 +417,7 @@ function initStorefrontAPIClient(storefrontAPIVersion = DEFAULT_SFAPI_VERSION) {
 
   const getCartId = () => {
     const rawId = getCookie(CART_COOKIE_NAME);
-    return rawId ? rawId : null; //`gid://shopify/Cart/${rawId}` : null;
+    return rawId ? `gid://shopify/Cart/${rawId}` : null;
   }
 
   window.StorefrontAPIClient = {
@@ -436,7 +435,8 @@ function initStorefrontAPIClient(storefrontAPIVersion = DEFAULT_SFAPI_VERSION) {
     },
     getAllCartLineItems,
     setCartIDCookie(cart) {
-      document.cookie=`${window.StorefrontAPIClient.CART_COOKIE_NAME}=${cart.id};path=/`
+      const cartId = cart.id.split('/').slice(-1);
+      document.cookie=`${window.StorefrontAPIClient.CART_COOKIE_NAME}=${cartId};path=/`
     },
     CART_COOKIE_NAME,
     operations: {

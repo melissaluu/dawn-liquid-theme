@@ -32,10 +32,10 @@ class CartNotification extends HTMLElement {
   }
 
   renderContents(parsedState) {
-      this.cartItemKey = parsedState.key ? parsedState.key : undefined;
+      this.cartItemKey = parsedState.key ? parsedState.key.merchandise.id.split('/').slice(-1) : undefined;
       this.getSectionsToRender().forEach((section => {
         document.getElementById(section.id).innerHTML =
-          this.getSectionInnerHTML(parsedState.sections[section.id], section.selector);
+          this.getSectionInnerHTML(section.id, parsedState.sections[section.id], section.selector);
       }));
 
       if (this.header) this.header.reveal();
@@ -46,7 +46,7 @@ class CartNotification extends HTMLElement {
     return [
       {
         id: 'cart-notification-product',
-        selector: `[id="cart-notification-product-${this.cartItemKey}"]`,
+        selector: `${this.cartItemKey}`, //`[id="cart-notification-product-${this.cartItemKey}"]`,
       },
       {
         id: 'cart-notification-button'
@@ -57,10 +57,20 @@ class CartNotification extends HTMLElement {
     ];
   }
 
-  getSectionInnerHTML(html, selector = '.shopify-section') {
-    return new DOMParser()
-      .parseFromString(html, 'text/html')
-      .querySelector(selector).innerHTML;
+  getSectionInnerHTML(id, html, selector = '.shopify-section') {
+    const dom = new DOMParser()
+    .parseFromString(html, 'text/html')
+
+    if(id === 'cart-notification-product') {
+      const cartLines = dom.querySelectorAll('.cart-item');
+      
+      return Array.from(cartLines).find(line => {
+        return line.dataset.variantId === selector;
+      }).innerHTML;
+    }
+
+    return dom.querySelector(selector).innerHTML
+    
   }
 
   handleBodyClick(evt) {

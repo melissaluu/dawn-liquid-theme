@@ -26,7 +26,7 @@ if (!customElements.get('product-form')) {
       const sectionsUrl =  window.location.pathname;
       
 
-     if (window.UseStorefrontAPI()) {
+    //  if (window.UseStorefrontAPI()) {
 
       const formDataObject = [...formData.entries()].reduce((acc, item) => {
         // NOTE: Need to transform the Liquid syntax for item attributes (i.e. properties) to SFAPI format
@@ -81,7 +81,7 @@ if (!customElements.get('product-form')) {
         this.error = false;
         
         window.StorefrontAPIClient.setCartIDCookie(cart);
-        console.log('cart', cart);
+        console.log('cart122', cart);
         return cart;
       })
       .then((response) => {
@@ -90,14 +90,14 @@ if (!customElements.get('product-form')) {
       })
       .then((response) => {
         // NOTE: Need to find the updated cart line's id - will be used when in cart pop up
-        this.cartLineId = response.find((item) => {
+        this.cartLine = response.find((item) => {
           const hasSameSellingPlanId = sellingPlanId && item.sellingPlanAllocation ? 
             item.sellingPlanAllocation.sellingPlan.id === sellingPlanId : 
             true;
           return item.merchandise.id === merchandiseId 
             && hasSameSellingPlanId
             && JSON.stringify(formDataObject.attributes) == JSON.stringify(item.attributes) // cheating - I know
-        }).id;
+        });
       })
       .then(() => {
         return fetch(`${sectionsUrl}?sections=${sections.join()}`)
@@ -106,7 +106,8 @@ if (!customElements.get('product-form')) {
         return response.json();
       })
       .then((response) => {
-        const parsedState = {key: this.cartLineId, sections: response};
+        console.log('response', response)
+        const parsedState = {key: this.cartLine, sections: response};
         const quickAddModal = this.closest('quick-add-modal');
 
         if (quickAddModal) {
@@ -115,6 +116,7 @@ if (!customElements.get('product-form')) {
           }, { once: true });
           quickAddModal.hide(true);
         } else {
+          console.log('inside', parsedState)
           this.cart.renderContents(parsedState);
         }
       })
@@ -129,61 +131,62 @@ if (!customElements.get('product-form')) {
         console.log(`SFAPI add to cart time: ${Math.floor(Date.now() - startTime)}ms`);
       }); 
 
-       return;
-     }
+      //  return;
+    //  }
 
 
-      if (this.cart) {
-        formData.append('sections', sections);
-        formData.append('sections_url', sectionsUrl);
-        this.cart.setActiveElement(document.activeElement);
-      }
+      // if (this.cart) {
+      //   formData.append('sections', sections);
+      //   formData.append('sections_url', sectionsUrl);
+      //   this.cart.setActiveElement(document.activeElement);
+      // }
 
-      const config = fetchConfig('javascript');
-      config.headers['X-Requested-With'] = 'XMLHttpRequest';
-      delete config.headers['Content-Type'];
-      config.body = formData;
+      // console.log(formData)
+      // const config = fetchConfig('javascript');
+      // config.headers['X-Requested-With'] = 'XMLHttpRequest';
+      // delete config.headers['Content-Type'];
+      // config.body = formData;
 
-      const startTime = Date.now();
-      fetch(`${routes.cart_add_url}`, config)
-        .then((response) => response.json())
-        .then((response) => {
-          if (response.status) {
-            this.handleErrorMessage(response.description);
+      // const startTime = Date.now();
+      // fetch(`${routes.cart_add_url}`, config)
+      //   .then((response) => response.json())
+      //   .then((response) => {
+      //     if (response.status) {
+      //       this.handleErrorMessage(response.description);
 
-            const soldOutMessage = this.submitButton.querySelector('.sold-out-message');
-            if (!soldOutMessage) return;
-            this.submitButton.setAttribute('aria-disabled', true);
-            this.submitButton.querySelector('span').classList.add('hidden');
-            soldOutMessage.classList.remove('hidden');
-            this.error = true;
-            return;
-          } else if (!this.cart) {
-            window.location = window.routes.cart_url;
-            return;
-          }
+      //       const soldOutMessage = this.submitButton.querySelector('.sold-out-message');
+      //       if (!soldOutMessage) return;
+      //       this.submitButton.setAttribute('aria-disabled', true);
+      //       this.submitButton.querySelector('span').classList.add('hidden');
+      //       soldOutMessage.classList.remove('hidden');
+      //       this.error = true;
+      //       return;
+      //     } else if (!this.cart) {
+      //       window.location = window.routes.cart_url;
+      //       return;
+      //     }
 
-          this.error = false;
-          const quickAddModal = this.closest('quick-add-modal');
-          if (quickAddModal) {
-            document.body.addEventListener('modalClosed', () => {
-              setTimeout(() => { this.cart.renderContents(response) });
-            }, { once: true });
-            quickAddModal.hide(true);
-          } else {
-            this.cart.renderContents(response);
-          }
-        })
-        .catch((e) => {
-          console.error(e);
-        })
-        .finally(() => {
-          this.submitButton.classList.remove('loading');
-          if (this.cart && this.cart.classList.contains('is-empty')) this.cart.classList.remove('is-empty');
-          if (!this.error) this.submitButton.removeAttribute('aria-disabled');
-          this.querySelector('.loading-overlay__spinner').classList.add('hidden');
-          console.log(`Ajax add to cart time: ${Math.floor(Date.now() - startTime)}ms`);
-        });
+      //     this.error = false;
+      //     const quickAddModal = this.closest('quick-add-modal');
+      //     if (quickAddModal) {
+      //       document.body.addEventListener('modalClosed', () => {
+      //         setTimeout(() => { this.cart.renderContents(response) });
+      //       }, { once: true });
+      //       quickAddModal.hide(true);
+      //     } else {
+      //       this.cart.renderContents(response);
+      //     }
+      //   })
+      //   .catch((e) => {
+      //     console.error(e);
+      //   })
+      //   .finally(() => {
+      //     this.submitButton.classList.remove('loading');
+      //     if (this.cart && this.cart.classList.contains('is-empty')) this.cart.classList.remove('is-empty');
+      //     if (!this.error) this.submitButton.removeAttribute('aria-disabled');
+      //     this.querySelector('.loading-overlay__spinner').classList.add('hidden');
+      //     console.log(`Ajax add to cart time: ${Math.floor(Date.now() - startTime)}ms`);
+      //   });
     }
 
     handleErrorMessage(errorMessage = false) {
