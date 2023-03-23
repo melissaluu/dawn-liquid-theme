@@ -95,6 +95,11 @@
           "settings": {
             "share_label": "Share"
           }
+        },
+        "judgeme_preview_badge_product_page_1dae0782": {
+          "type": "shopify:\/\/apps\/judge-me-product-reviews\/blocks\/preview_badge\/61ccd3b1-a9f2-4160-9fe9-4fec8413e5d8",
+          "settings": {
+          }
         }
       },
       "block_order": [
@@ -102,6 +107,7 @@
         "title",
         "caption",
         "price",
+        "judgeme_preview_badge_product_page_1dae0782",
         "variant_picker",
         "quantity_selector",
         "custom_engraving",
@@ -217,10 +223,27 @@
         "padding_top": 36,
         "padding_bottom": 28
       }
+    },
+    "judgeme_section_review_widget_8731": {
+      "type": "apps",
+      "blocks": {
+        "judgeme_review_widget_878212af": {
+          "type": "shopify:\/\/apps\/judge-me-product-reviews\/blocks\/review_widget\/61ccd3b1-a9f2-4160-9fe9-4fec8413e5d8",
+          "settings": {
+          }
+        }
+      },
+      "block_order": [
+        "judgeme_review_widget_878212af"
+      ],
+      "settings": {
+        "include_margins": true
+      }
     }
   },
   "order": [
     "main",
+    "judgeme_section_review_widget_8731",
     "image-with-text",
     "multicolumn",
     "product-recommendations"
