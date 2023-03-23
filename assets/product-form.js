@@ -54,19 +54,22 @@ if (!customElements.get('product-form')) {
         sellingPlanId
       }];
 
-      const {operationName, operation, variables} = window.StorefrontAPIClient.getAddToCartConfig(lines);
+      const {operationName, operation, variables} = window.SFAPIClient.getAddToCartConfig(lines);
 
       const startTime = Date.now();
-      window.StorefrontAPIClient.fetchData(operation, variables)
-      .then(response => { return response.json()})
+      // window.SFAPIClient.fetchData(operation, variables)
+      // .then(response => { return response.json()})
+      window.SFAPIClient.client.fetch({operation, variables})
       .then(response => {
 
+        console.log(response)
         // NOTE: Double layer error handling needed when using GQL
-        if (response.errors) {
+        if (response.error) {
           throw new Error(response.error)
         };
         
         const {data: {[operationName]: {cart, userErrors}}} = response;
+
         if (userErrors.length > 0) {
           this.handleErrorMessage(JSON.stringify(userErrors));
 
@@ -80,13 +83,13 @@ if (!customElements.get('product-form')) {
         }         
         this.error = false;
         
-        window.StorefrontAPIClient.setCartIDCookie(cart);
+        window.SFAPIClient.setCartIDCookie(cart);
         console.log('cart122', cart);
         return cart;
       })
       .then((response) => {
         // NOTE: Need to get all cart lines to find the right cartline id to display
-        return window.StorefrontAPIClient.getAllCartLineItems(response)
+        return window.SFAPIClient.getAllCartLineItems(response)
       })
       .then((response) => {
         // NOTE: Need to find the updated cart line's id - will be used when in cart pop up

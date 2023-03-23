@@ -65,9 +65,9 @@ class CartItems extends HTMLElement {
     if (window.UseStorefrontAPI()) {
 
       let startTime = 0;
-      const sfapiCartId = window.StorefrontAPIClient.getCartId();
+      const sfapiCartId = window.SFAPIClient.getCartId();
 
-      window.StorefrontAPIClient.fetchData(window.StorefrontAPIClient.operations.CART_QUERY, {id: sfapiCartId})
+      window.SFAPIClient.client.fetch({operation: window.SFAPIClient.operations.CART_QUERY, variables: {id: sfapiCartId}})
         .then(response => { return response.json()})
         .then(response => {
           const {id, quantity} = response.data.cart.lines.edges[0].node;
@@ -82,7 +82,7 @@ class CartItems extends HTMLElement {
           };
 
           startTime = Date.now();
-          return window.StorefrontAPIClient.fetchData(window.StorefrontAPIClient.operations.UPDATE_LINES, variables)
+          return window.SFAPIClient.client.fetch({operation: window.SFAPIClient.operations.UPDATE_LINES, variables})
         })
         .then(response => { return response.json()})
         .then((response) => {
@@ -250,8 +250,8 @@ if (!customElements.get('cart-note')) {
         const startTime = Date.now();
         
         if (window.UseStorefrontAPI()) {
-          const sfapiCartId = window.StorefrontAPIClient.getCartId();
-          window.StorefrontAPIClient.fetchData(window.StorefrontAPIClient.operations.UDATE_NOTE, {id: sfapiCartId, note: event.target.value})
+          const sfapiCartId = window.SFAPIClient.getCartId();
+          window.SFAPIClient.client.fetch({operation: window.SFAPIClient.operations.UDATE_NOTE, variables: {id: sfapiCartId, note: event.target.value}})
           .catch((error) => {
             console.log('Update note error: ', error);
           })

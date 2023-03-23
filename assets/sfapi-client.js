@@ -343,36 +343,6 @@ const UDATE_NOTE = `
   }
 `;
 
-function generateSFAPIFetchData(storefrontAPIVersion) {
-  const headers = {
-    'Content-Type': 'application/json',
-    Accept: 'application/json',
-    'X-Shopify-Storefront-Access-Token': 'f8d666e5c7ea78ece514ec7c8a560be4',
-    'X-SDK-Variant': 'storefront-api-online-store-client',
-    'X-SDK-Version': storefrontAPIVersion,
-    'X-SDK-Variant-Source': 'online-store'
-  };
-
-  // NOTE: need to figure out custom urls & cross site policies
-  // const url = `${window.shopUrl}/api/${storefrontAPIVersion}/graphql`
-  const url = `/api/${storefrontAPIVersion}/graphql`
-
-  return (operation, variables = {}) => {
-    const body = JSON.stringify({
-      query: operation,
-      variables,
-    });
-
-    const request = new Request(url, {
-      method: 'POST',
-      headers,
-      body,
-    });
-
-    return fetch(request);
-  }
-}
-
 function getCookie(name) {
   return document.cookie.split('; ').find(cookie => cookie.startsWith(`${name}=`))?.split('=')[1] || null;
 }
@@ -383,73 +353,75 @@ function extractNodes(edges) {
   })
 }
 
+document.addEventListener("DOMContentLoaded", () => {
 
-
-function initStorefrontAPIClient(storefrontAPIVersion = DEFAULT_SFAPI_VERSION) {
-
-  const fetchData = generateSFAPIFetchData(storefrontAPIVersion);
-
-  const getNextCartLines = (cart, cartLines) => {
-    const cursor = cart.lines.edges[cart.lines.edges.length - 1].cursor
-    return fetchData(CART_LINES_QUERY, {id: cart.id, after: cursor})
-      .then(response => { return response.json()})
-      .then((response) => {
-        const lines = [...cartLines, ...response.data.cart.lines.edges];
-
-        if (response.data.cart.lines.pageInfo.hasNextPage) {
-          return getNextCartLines(response.data.cart, lines)
-        }
-
-        return lines
-      });  
-  }
-
-  const getAllCartLineItems = (cart) => {    
-    if (cart.lines.pageInfo.hasNextPage) {
-      return getNextCartLines(cart, [...cart.lines.edges])
-      .then((response) => {
-        return extractNodes(response);
-      })
+  const client = window.StorefrontAPIClient.createClient({
+    storeName: 'happy-breeze',
+    storefrontAPIAccessToken: 'f8d666e5c7ea78ece514ec7c8a560be4',
+    storefrontAPIVersion: DEFAULT_SFAPI_VERSION,
+  })
+  
+    const getNextCartLines = (cart, cartLines) => {
+      const cursor = cart.lines.edges[cart.lines.edges.length - 1].cursor
+      return fetchData(CART_LINES_QUERY, {id: cart.id, after: cursor})
+        .then(response => { return response.json()})
+        .then((response) => {
+          const lines = [...cartLines, ...response.data.cart.lines.edges];
+  
+          if (response.data.cart.lines.pageInfo.hasNextPage) {
+            return getNextCartLines(response.data.cart, lines)
+          }
+  
+          return lines
+        });  
     }
-
-    return extractNodes(cart.lines.edges);
-  }
-
-  const getCartId = () => {
-    const rawId = getCookie(CART_COOKIE_NAME);
-    return rawId ? `gid://shopify/Cart/${rawId}` : null;
-  }
-
-  window.StorefrontAPIClient = {
-    fetchData,
-    getCartId,
-    getAddToCartConfig(lines) {
-      const cartId = getCartId();
-      
-      // NOTE: SFAPI has unique operation names to consider when parsing JSON response
-      return {
-        operation: cartId ? ADD_LINES : CART_CREATE_MUTATION,
-        operationName: cartId ? 'cartLinesAdd' : 'cartCreate',
-        variables: cartId ? {id: cartId, lines} : {input: {lines}},
+  
+    const getAllCartLineItems = (cart) => {    
+      if (cart.lines.pageInfo.hasNextPage) {
+        return getNextCartLines(cart, [...cart.lines.edges])
+        .then((response) => {
+          return extractNodes(response);
+        })
       }
-    },
-    getAllCartLineItems,
-    setCartIDCookie(cart) {
-      const cartId = cart.id.split('/').slice(-1);
-      document.cookie=`${window.StorefrontAPIClient.CART_COOKIE_NAME}=${cartId};path=/`
-    },
-    CART_COOKIE_NAME,
-    operations: {
-      CART_QUERY,
-      CART_CREATE_MUTATION,
-      ADD_LINES,
-      UPDATE_LINES,
-      UDATE_NOTE
+  
+      return extractNodes(cart.lines.edges);
     }
-  }
-}
+  
+    const getCartId = () => {
+      const rawId = getCookie(CART_COOKIE_NAME);
+      return rawId ? `gid://shopify/Cart/${rawId}` : null;
+    }
+  
+    window.SFAPIClient = {
+      client,
+      getCartId,
+      getAddToCartConfig(lines) {
+        const cartId = getCartId();
+        
+        // NOTE: SFAPI has unique operation names to consider when parsing JSON response
+        return {
+          operation: cartId ? ADD_LINES : CART_CREATE_MUTATION,
+          operationName: cartId ? 'cartLinesAdd' : 'cartCreate',
+          variables: cartId ? {id: cartId, lines} : {input: {lines}},
+        }
+      },
+      getAllCartLineItems,
+      setCartIDCookie(cart) {
+        const cartId = cart.id.split('/').slice(-1);
+        document.cookie=`${window.SFAPIClient.CART_COOKIE_NAME}=${cartId};path=/`
+      },
+      CART_COOKIE_NAME,
+      operations: {
+        CART_QUERY,
+        CART_CREATE_MUTATION,
+        ADD_LINES,
+        UPDATE_LINES,
+        UDATE_NOTE
+      }
+    }
+  console.log('here', window.SFAPIClient)
+});
 
-initStorefrontAPIClient();
 
 window.UseStorefrontAPI = () => {
   const searchParams = new URLSearchParams(window.location.search);
