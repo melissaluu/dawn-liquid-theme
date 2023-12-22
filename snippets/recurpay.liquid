@@ -56,7 +56,41 @@
           buynowSelector = 'form[action="/cart/add"] .shopify-payment-button';
 
       // ACCOUNT PAGE
-      if($(accountSelector).length && recurpay.customer !== "guest"){
+      //LOGIN PAGE
+function loginPageSubscriptionLink(){
+    var accountLoginHTML = "";
+        managesubscriptionSelector = ".recurpay-manage-subscription-link",
+        signUpFormSelector = 'form[action*="/account"]';
+    if($(managesubscriptionSelector).length <= 0 && $(signUpFormSelector).length > 0){
+        $(signUpFormSelector).append("<div class='recurpay-manage-subscription-link'></div>");
+    }
+    if($(managesubscriptionSelector).length >= 0){
+        if(window.location.href.indexOf("account/login") > -1 || window.location.href.indexOf("account/register") > -1 ){
+            var account_url = "";
+            {% if customer.id %}
+                account_url = recurpay.accountAPI+"?settings=true";
+            {% else %}
+                account_url = recurpay.domainURL + '/api/storefront/v2/customers/subscriptions/count?settings=true';
+            {% endif %}
+            $.ajax({
+                url: account_url,
+                type: 'GET',
+                async:true,
+                success: function(response){
+                    if(response != "ERROR"){
+                        if(response.settings !== null && !$.isEmptyObject(response.settings) && response.translations.breadcrumb_manage_subscription_link != undefined){
+                            accountLoginHTML += "<a href='"+recurpay.domainURL+"/account/login' target='_blank'>"+response.translations.breadcrumb_manage_subscription_link+"</a>";
+                        }
+                    }
+                    $(managesubscriptionSelector).html(accountLoginHTML);
+                }
+            });
+        }
+    }
+}
+loginPageSubscriptionLink();
+
+if($(accountSelector).length && recurpay.customer !== "guest"){
         function recurAccount(count){
           accountTemplate += '<div class="subscription__account" data-subscription-block>'
           accountTemplate += '<div class="subscription__account--content">'
